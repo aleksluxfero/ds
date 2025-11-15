@@ -27,6 +27,11 @@ function RootInner({ children }: PropsWithChildren) {
     initDataUser && setLocale(initDataUser.language_code);
   }, [initDataUser]);
 
+  // Expand the Mini App to full screen.
+  useEffect(() => {
+    miniApp.expand();
+  }, []);
+
   return (
     <TonConnectUIProvider manifestUrl="/tonconnect-manifest.json">
       <AppRoot
@@ -52,6 +57,6 @@ export function Root(props: PropsWithChildren) {
       <RootInner {...props} />
     </ErrorBoundary>
   ) : (
-    <LoadingSpinner text="Загрузка..." />
+    <LoadingSpinner text="Загрузка..." fullScreen={true} />
   );
 }
