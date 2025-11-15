@@ -112,7 +112,7 @@ const StatisticsPage: React.FC = () => {
                 if (!dream.date) {
                     return false;
                 }
-                const dreamDate = new Date(dream.date);
+                const dreamDate = new Date(Number(dream.date));
                 return dreamDate >= startOfDay && dreamDate <= endOfDay;
             })
             .filter(dream => {
