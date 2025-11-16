@@ -8,6 +8,7 @@ import {
   useLaunchParams,
   useSignal,
 } from '@telegram-apps/sdk-react';
+import { viewport } from '@telegram-apps/sdk';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import { AppRoot } from '@telegram-apps/telegram-ui';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -33,9 +34,9 @@ function RootInner({ children }: PropsWithChildren) {
 
   // Expand the Mini App to full screen.
   useEffect(() => {
-    miniApp.expand(); // Removed to allow fullsize instead of fullscreen
-    // miniApp.isVerticalSwipesEnabled = false; // Disable vertical swipes
-    // miniApp.isClosingConfirmationEnabled = true; // Enable closing confirmation
+    if (viewport && !viewport.isExpanded) {
+      viewport.expand();
+    }
   }, []);
 
   return (
