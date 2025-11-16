@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRawInitData } from '@telegram-apps/sdk-react';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { DreamProvider } from '@/contexts/DreamContext';
 import HomePage from './dream-journal/pages/HomePage';
 import LoadingSpinner from './dream-journal/LoadingSpinner';
 import DreamJournalLayout from './dream-journal/DreamJournalLayout';
@@ -67,7 +68,9 @@ const DreamJournalApp = () => {
   return (
     <DreamJournalLayout>
       <AuthProvider initDataRaw={initData}>
-        <HomePage />
+        <DreamProvider>
+          <HomePage />
+        </DreamProvider>
       </AuthProvider>
     </DreamJournalLayout>
   );

@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getDreamById, deleteDream } from '@/services/api';
+import { getDreamById } from '@/services/api';
 import { Dream } from '@/types/dream';
 import { ArrowLeftIcon, EditIcon, Trash2Icon, CopyIcon } from '../icons';
 import ConfirmationDialog from '../ConfirmationDialog';
 import Toast from '../Toast';
 import LoadingSpinner from '../LoadingSpinner';
 import { getDreamTypeLabel, getDreamTypeStyles } from '../utils';
+import { useDreams } from '@/contexts/DreamContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 type ToastType = 'success' | 'error';
@@ -20,39 +21,48 @@ const DreamDetailPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const { initDataRaw } = useAuth();
-  
+  const { state, deleteDream } = useDreams();
+  const { dreams, loading: dreamsLoading } = state;
+
   const [dream, setDream] = useState<Dream | null>(null);
   const [loading, setLoading] = useState(true);
   const [showConfirm, setShowConfirm] = useState(false);
   const [toastState, setToastState] = useState<ToastState>({ visible: false, message: '', type: 'success' });
 
-  useEffect(() => {
+  const dreamId = useMemo(() => {
     const id = params.id as string;
-    if (!id || !initDataRaw) {
-      return;
-    }
+    return id ? Number(id) : null;
+  }, [params.id]);
 
-    const dreamId = Number(id);
-
-    if (isNaN(dreamId)) {
+  useEffect(() => {
+    if (!dreamId) {
       router.push('/');
       return;
     }
-    
-    const fetchDream = async () => {
-      setLoading(true);
-      try {
-        const dreamData = await getDreamById(initDataRaw, dreamId);
-        setDream(dreamData || null);
-      } catch (error) {
-        console.error("Failed to fetch dream:", error);
-        setDream(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDream();
-  }, [params.id, router, initDataRaw]);
+
+    // Сначала ищем сон в контексте
+    const dreamFromContext = dreams.find(d => d.id === dreamId);
+
+    if (dreamFromContext) {
+      setDream(dreamFromContext);
+      setLoading(false);
+    } else if (!dreamsLoading && initDataRaw) {
+      // Если в контексте снов нет и загрузка завершена, делаем fetch
+      const fetchDream = async () => {
+        setLoading(true);
+        try {
+          const dreamData = await getDreamById(initDataRaw, dreamId);
+          setDream(dreamData || null);
+        } catch (error) {
+          console.error("Failed to fetch dream:", error);
+          setDream(null);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDream();
+    }
+  }, [dreamId, dreams, dreamsLoading, router, initDataRaw]);
 
   useEffect(() => {
     if (toastState.visible) {
@@ -65,9 +75,13 @@ const DreamDetailPage: React.FC = () => {
 
 
   const handleConfirmDelete = async () => {
-    if (dream && initDataRaw) {
-      await deleteDream(initDataRaw, dream.id);
-      router.push('/');
+    if (dream) {
+      try {
+        await deleteDream(dream.id);
+        router.push('/');
+      } catch (error) {
+        setToastState({ visible: true, message: 'Ошибка при удалении сна.', type: 'error' });
+      }
     }
   };
 
@@ -139,7 +153,7 @@ ${tagsText}` : ''}
   const styles = getDreamTypeStyles(dream.type);
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <header className="sticky top-0 z-20 h-16 bg-black/30 backdrop-blur-lg border-b border-white/10 flex items-center">
         <div className="container mx-auto px-4 max-w-3xl flex justify-between items-center">
             <button onClick={() => router.push('/')} className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">

@@ -2,6 +2,7 @@
 'use client';
 
 import { AuthProvider } from '@/contexts/AuthContext';
+import { DreamProvider } from '@/contexts/DreamContext';
 import DreamDetailPage from '@/components/dream-journal/pages/DreamDetailPage';
 import { useRawInitData } from '@telegram-apps/sdk-react';
 import DreamJournalLayout from '@/components/dream-journal/DreamJournalLayout';
@@ -17,7 +18,9 @@ export default function DreamDetailRoute() {
   return (
     <DreamJournalLayout>
       <AuthProvider initDataRaw={initData}>
-        <DreamDetailPage />
+        <DreamProvider>
+          <DreamDetailPage />
+        </DreamProvider>
       </AuthProvider>
     </DreamJournalLayout>
   );

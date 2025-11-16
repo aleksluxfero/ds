@@ -153,7 +153,7 @@ const StatisticsPage: React.FC = () => {
     }, [filteredDreams]);
 
     return (
-        <div className="animate-fade-in">
+        <div>
             <header className="sticky top-0 z-20 h-16 bg-black/30 backdrop-blur-lg border-b border-white/10 flex items-center">
                 <div className="container mx-auto px-4 max-w-3xl flex justify-between items-center">
                     <button onClick={() => router.push('/')} className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">

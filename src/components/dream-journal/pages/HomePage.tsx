@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dream, DreamType } from '@/types/dream';
-import { getAllDreams, deleteDream } from '@/services/api';
+import { useDreams } from '@/contexts/DreamContext';
 import DreamCard from '../DreamCard';
 import ConfirmationDialog from '../ConfirmationDialog';
 import Toast from '../Toast';
 import { PlusIcon, BookOpenTextIcon, SettingsIcon, SearchIcon, XIcon, BarChartIcon } from '../icons';
-import { useAuth } from '@/contexts/AuthContext';
 import { Link } from '@/components/Link/Link';
 import SkeletonCard from '../SkeletonCard';
 
@@ -60,8 +59,9 @@ const activeFilterStyles: Record<string, string> = {
 
 
 const HomePage: React.FC = () => {
-  const [dreams, setDreams] = useState<Dream[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { state, deleteDream: deleteDreamFromContext } = useDreams();
+  const { dreams, loading } = state;
+  
   const [showConfirm, setShowConfirm] = useState<number | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,40 +71,7 @@ const HomePage: React.FC = () => {
 
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null); // Keep for potential future import/export
   const router = useRouter();
-  const { initDataRaw } = useAuth();
-
-  const loadDreams = useCallback(async (showLoader = true) => {
-    if (!initDataRaw) return;
-    try {
-      if (showLoader) {
-        setLoading(true);
-      }
-      const dreamsFromDB = await getAllDreams(initDataRaw);
-      setDreams(dreamsFromDB);
-    } catch (error) {
-      console.error("Failed to load dreams:", error);
-    } finally {
-      if (showLoader) {
-        setLoading(false);
-      }
-    }
-  }, [initDataRaw]);
-
-  useEffect(() => {
-    if (initDataRaw) {
-        loadDreams();
-    }
-  }, [initDataRaw, loadDreams]);
-
-  useEffect(() => {
-    const handleSilentReload = () => loadDreams(false);
-    window.addEventListener('focus', handleSilentReload);
-    return () => {
-      window.removeEventListener('focus', handleSilentReload);
-    };
-  }, [loadDreams]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -141,7 +108,7 @@ const HomePage: React.FC = () => {
         return (
           dream.title.toLowerCase().includes(query) ||
           dream.content.toLowerCase().includes(query) ||
-          dream.tags.some(tag => tag.toLowerCase().includes(query))
+          (dream.tags && dream.tags.some(tag => tag.toLowerCase().includes(query)))
         );
       })
       .filter(dream => {
@@ -151,13 +118,6 @@ const HomePage: React.FC = () => {
         return dreamType === filterType;
       });
   }, [dreams, searchQuery, filterType]);
-  
-  // Removed WelcomeDialog related code
-
-  // Removed Export/Import related code (commented out)
-  // const handleExport = async () => { ... };
-  // const handleImportClick = () => { ... };
-  // const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => { ... };
 
   const handleDeleteRequest = useCallback((id: number) => {
     setShowConfirm(id);
@@ -172,21 +132,24 @@ const HomePage: React.FC = () => {
   }, [router]);
 
   const handleConfirmDelete = async () => {
-    if (showConfirm !== null && initDataRaw) {
-      await deleteDream(initDataRaw, showConfirm);
-      setShowConfirm(null);
-      await loadDreams();
+    if (showConfirm !== null) {
+      try {
+        await deleteDreamFromContext(showConfirm);
+        setToastState({ visible: true, message: 'Сон удален!', type: 'success' });
+      } catch (error) {
+        setToastState({ visible: true, message: 'Ошибка при удалении сна.', type: 'error' });
+      } finally {
+        setShowConfirm(null);
+      }
     }
   };
 
   const handleCancelDelete = () => {
     setShowConfirm(null);
   };
-  
-  const isImporting = false; // toastState.type === 'loading' && toastState.visible; // Simplified as import/export is commented out
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <header className="sticky top-0 z-20 h-16 bg-black/30 backdrop-blur-lg border-b border-white/10 flex items-center">
         <div className="container mx-auto px-4 max-w-3xl flex justify-between items-center transition-all duration-300">
             {!isSearchOpen ? (
@@ -218,7 +181,6 @@ const HomePage: React.FC = () => {
                                     <BarChartIcon className="w-4 h-4" />
                                     Статистика
                                 </Link>
-                                {/* Export/Import buttons commented out */}
                             </div>
                         )}
                     </div>
@@ -311,14 +273,6 @@ const HomePage: React.FC = () => {
           confirmText="Удалить"
         />
       )}
-      <input
-        type="file"
-        ref={fileInputRef}
-        // onChange={handleFileSelected}
-        accept=".json,application/json"
-        style={{ display: 'none' }}
-        aria-hidden="true"
-      />
        <Toast 
           message={toastState.message} 
           type={toastState.type}
