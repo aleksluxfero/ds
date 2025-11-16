@@ -86,7 +86,8 @@ const DreamDetailPage: React.FC = () => {
   };
 
   const handleTagClick = (tag: string) => {
-    router.push(`/?tag=${encodeURIComponent(tag)}`);
+    // Simplified navigation, as search state is no longer passed
+    router.push('/');
   };
   
   const formattedDate = dream?.date

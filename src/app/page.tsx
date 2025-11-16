@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Dream, DreamType } from '@/types/dream';
 import { useDreams } from '@/contexts/DreamContext';
 import DreamCard from '@/components/dream-journal/DreamCard';
@@ -58,7 +58,8 @@ const activeFilterStyles: Record<string, string> = {
     [DreamType.SleepParalysis]: 'bg-gradient-to-r from-red-700/50 to-gray-800/50 text-white shadow-md',
 };
 
-const HomePageContent: React.FC = () => {
+
+const HomePage: React.FC = () => {
   const { state, deleteDream: deleteDreamFromContext } = useDreams();
   const { dreams, loading } = state;
   
@@ -68,17 +69,10 @@ const HomePageContent: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [toastState, setToastState] = useState<ToastState>({ visible: false, message: '', type: 'loading' });
   const [filterType, setFilterType] = useState<FilterType>('all');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const tag = searchParams.get('tag');
-    setSelectedTag(tag);
-  }, [searchParams]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -110,9 +104,6 @@ const HomePageContent: React.FC = () => {
   const filteredDreams = useMemo(() => {
     return dreams
       .filter(dream => {
-        if (selectedTag) {
-          return dream.tags && dream.tags.includes(selectedTag);
-        }
         const query = searchQuery.toLowerCase().trim();
         if (!query) return true;
         return (
@@ -127,7 +118,7 @@ const HomePageContent: React.FC = () => {
         const dreamType = dream.type || DreamType.Normal;
         return dreamType === filterType;
       });
-  }, [dreams, searchQuery, filterType, selectedTag]);
+  }, [dreams, searchQuery, filterType]);
 
   const handleDeleteRequest = useCallback((id: number) => {
     setShowConfirm(id);
@@ -156,11 +147,6 @@ const HomePageContent: React.FC = () => {
 
   const handleCancelDelete = () => {
     setShowConfirm(null);
-  };
-
-  const clearTagFilter = () => {
-    setSelectedTag(null);
-    router.push('/');
   };
 
   return (
@@ -232,28 +218,19 @@ const HomePageContent: React.FC = () => {
       {!loading && dreams.length > 0 && (
         <div className="container mx-auto px-4 max-w-3xl pt-6">
           <div className="flex flex-wrap items-center gap-2">
-            {selectedTag ? (
-              <div className="flex items-center gap-2 bg-purple-600 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-md">
-                <span>Тег: {selectedTag}</span>
-                <button onClick={clearTagFilter} className="ml-1 p-0.5 rounded-full hover:bg-white/20">
-                  <XIcon className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              filterOptions.map(option => (
-                <button
-                  key={option.key}
-                  onClick={() => setFilterType(option.key)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    filterType === option.key
-                      ? activeFilterStyles[option.key]
-                      : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))
-            )}
+            {filterOptions.map(option => (
+              <button
+                key={option.key}
+                onClick={() => setFilterType(option.key)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  filterType === option.key
+                    ? activeFilterStyles[option.key]
+                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -305,11 +282,5 @@ const HomePageContent: React.FC = () => {
     </div>
   );
 };
-
-const HomePage: React.FC = () => (
-  <Suspense fallback={<LoadingState />}>
-    <HomePageContent />
-  </Suspense>
-);
 
 export default HomePage;

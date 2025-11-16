@@ -13,5 +13,4 @@ export interface Dream {
   date: number | null; // Stored as timestamp, or null if unknown
   tags: string[];
   type: DreamType;
-  created_at?: Date;
 }
