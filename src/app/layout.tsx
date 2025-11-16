@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 
 import { Root } from '@/components/Root/Root';
+import AuthAndDreamProviders from '@/components/AuthAndDreamProviders';
 import { I18nProvider } from '@/core/i18n/provider';
 
 import '@telegram-apps/telegram-ui/dist/styles.css';
@@ -21,7 +22,9 @@ export default async function RootLayout({ children }: PropsWithChildren) {
     <html lang={locale} suppressHydrationWarning>
       <body>
         <I18nProvider>
-          <Root>{children}</Root>
+          <AuthAndDreamProviders>
+            <Root>{children}</Root>
+          </AuthAndDreamProviders>
         </I18nProvider>
       </body>
     </html>

@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dream, DreamType } from '@/types/dream';
-import { getAllDreams } from '@/services/api';
 import { ArrowLeftIcon, BarChartIcon } from '../icons';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDreams } from '@/contexts/DreamContext';
 import SkeletonStatisticsPage from './SkeletonStatisticsPage';
 
 type FilterType = DreamType | 'all';
@@ -39,10 +38,9 @@ const formatDateForInput = (date: Date): string => {
 };
 
 const StatisticsPage: React.FC = () => {
-    const [allDreams, setAllDreams] = useState<Dream[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { state } = useDreams();
+    const { dreams: allDreams, loading } = state;
     const router = useRouter();
-    const { initDataRaw } = useAuth();
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -50,23 +48,6 @@ const StatisticsPage: React.FC = () => {
     const [startDate, setStartDate] = useState<Date>(thirtyDaysAgo);
     const [endDate, setEndDate] = useState<Date>(new Date());
     const [filterType, setFilterType] = useState<FilterType>('all');
-
-    useEffect(() => {
-        if (!initDataRaw) return;
-
-        const loadDreams = async () => {
-            try {
-                setLoading(true);
-                const dreamsFromDB = await getAllDreams(initDataRaw);
-                setAllDreams(dreamsFromDB);
-            } catch (error) {
-                console.error("Failed to load dreams for stats:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadDreams();
-    }, [initDataRaw]);
 
     const handleDateChange = (
         type: 'start' | 'end',

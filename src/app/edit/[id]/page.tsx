@@ -1,10 +1,7 @@
 
 'use client';
 
-import { AuthProvider } from '@/contexts/AuthContext';
-import { DreamProvider } from '@/contexts/DreamContext';
 import AddDreamPage from '@/components/dream-journal/pages/AddDreamPage';
-import { useRawInitData } from '@telegram-apps/sdk-react';
 import DreamJournalLayout from '@/components/dream-journal/DreamJournalLayout';
 
 /**
@@ -13,15 +10,9 @@ import DreamJournalLayout from '@/components/dream-journal/DreamJournalLayout';
  * the component itself handles the edit logic based on the URL parameter.
  */
 export default function EditDreamRoute() {
-  const initData = useRawInitData();
-
   return (
     <DreamJournalLayout>
-      <AuthProvider initDataRaw={initData}>
-        <DreamProvider>
-          <AddDreamPage />
-        </DreamProvider>
-      </AuthProvider>
+      <AddDreamPage />
     </DreamJournalLayout>
   );
 }

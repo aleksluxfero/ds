@@ -1,25 +1,22 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { PropsWithChildren } from 'react';
 import { useRawInitData } from '@telegram-apps/sdk-react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DreamProvider } from '@/contexts/DreamContext';
-import HomePage from './dream-journal/pages/HomePage';
-import LoadingSpinner from './dream-journal/LoadingSpinner';
 import DreamJournalLayout from './dream-journal/DreamJournalLayout';
+import LoadingSpinner from './dream-journal/LoadingSpinner';
+import { useEffect, useState } from 'react';
 
-/**
- * This component is the main entry point for the Dream Journal application.
- * It handles the initial authentication and user sync with the backend.
- */
-const DreamJournalApp = () => {
+const AuthAndDreamProviders = ({ children }: PropsWithChildren) => {
+  const initDataRaw = useRawInitData();
   const [status, setStatus] = useState<'syncing' | 'ready' | 'error'>('syncing');
   const [errorMessage, setErrorMessage] = useState('');
-  const initData = useRawInitData();
 
   useEffect(() => {
-    if (!initData) {
+    if (!initDataRaw) {
+      setErrorMessage('Telegram initialization data not found. Please launch the app via Telegram.');
+      setStatus('error');
       return;
     }
 
@@ -30,7 +27,7 @@ const DreamJournalApp = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ initData: initData }),
+          body: JSON.stringify({ initData: initDataRaw }),
         });
 
         if (!response.ok) {
@@ -46,7 +43,7 @@ const DreamJournalApp = () => {
     };
 
     syncUser();
-  }, [initData]);
+  }, [initDataRaw]);
 
   if (status === 'syncing') {
     return (
@@ -66,14 +63,12 @@ const DreamJournalApp = () => {
   }
 
   return (
-    <DreamJournalLayout>
-      <AuthProvider initDataRaw={initData}>
-        <DreamProvider>
-          <HomePage />
-        </DreamProvider>
-      </AuthProvider>
-    </DreamJournalLayout>
+    <AuthProvider initDataRaw={initDataRaw}>
+      <DreamProvider>
+        {children}
+      </DreamProvider>
+    </AuthProvider>
   );
 };
 
-export default DreamJournalApp;
+export default AuthAndDreamProviders;
