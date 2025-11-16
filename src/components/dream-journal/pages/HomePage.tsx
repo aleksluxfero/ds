@@ -8,7 +8,7 @@ import Toast from '../Toast';
 import { PlusIcon, BookOpenTextIcon, SettingsIcon, SearchIcon, XIcon, BarChartIcon } from '../icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from '@/components/Link/Link';
-import LoadingSpinner from '../LoadingSpinner'; // Keep this import for other loading states
+import SkeletonCard from '../SkeletonCard';
 
 const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
   <div className="text-center py-10 flex flex-col items-center">
@@ -22,6 +22,14 @@ const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
       Записать первый сон
     </button>
   </div>
+);
+
+const LoadingState: React.FC = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonCard key={index} />
+        ))}
+    </div>
 );
 
 type ToastType = 'loading' | 'success' | 'error';
@@ -265,7 +273,7 @@ const HomePage: React.FC = () => {
       )}
 
       <div className="container mx-auto px-4 pb-8 md:pb-12 pt-6 max-w-3xl">
-        {loading && <LoadingSpinner text="Загрузка снов..." />}
+        {loading && <LoadingState />}
         
         {!loading && dreams.length === 0 && (
           <EmptyState onAdd={() => router.push('/add')} />
