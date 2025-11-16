@@ -224,14 +224,13 @@ const AddDreamPage: React.FC = () => {
   }, [isDirty, handleSave, router]);
 
   useEffect(() => {
-    backButton.show();
-    backButton.onClick(handleBackClick);
+    backButton.hide();
+    // backButton.onClick(handleBackClick); // No need for click handler if button is hidden
 
     return () => {
-      backButton.hide();
-      backButton.offClick(handleBackClick);
+      // backButton.offClick(handleBackClick); // No need for offClick if button is hidden
     };
-  }, [handleBackClick]);
+  }, []); // Empty dependency array as handleBackClick is not used here anymore
 
   return (
     <div>
