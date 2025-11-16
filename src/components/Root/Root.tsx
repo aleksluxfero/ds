@@ -30,8 +30,8 @@ function RootInner({ children }: PropsWithChildren) {
   // Expand the Mini App to full screen.
   useEffect(() => {
     // miniApp.expand(); // Removed to allow fullsize instead of fullscreen
-    miniApp.isVerticalSwipesEnabled = false; // Disable vertical swipes
-    miniApp.isClosingConfirmationEnabled = true; // Enable closing confirmation
+    // miniApp.isVerticalSwipesEnabled = false; // Disable vertical swipes
+    // miniApp.isClosingConfirmationEnabled = true; // Enable closing confirmation
   }, []);
 
   return (
