@@ -35,7 +35,7 @@ export async function GET(request: Request) {
         const { rows: dreams } = await sql<Dream>`
             SELECT * FROM dreams
             WHERE user_id = ${userId}
-            ORDER BY date DESC, created_at DESC;
+            ORDER BY date DESC NULLS LAST, created_at DESC;
         `;
         return NextResponse.json({ dreams });
     } catch (error) {
