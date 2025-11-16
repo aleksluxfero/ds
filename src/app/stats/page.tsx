@@ -4,6 +4,7 @@
 import { AuthProvider } from '@/contexts/AuthContext';
 import StatisticsPage from '@/components/dream-journal/pages/StatisticsPage';
 import { useRawInitData } from '@telegram-apps/sdk-react';
+import DreamJournalLayout from '@/components/dream-journal/DreamJournalLayout';
 
 /**
  * This is the Next.js page for the /stats route.
@@ -14,8 +15,10 @@ export default function StatsRoute() {
   const initData = useRawInitData();
 
   return (
-    <AuthProvider initDataRaw={initData}>
-      <StatisticsPage />
-    </AuthProvider>
+    <DreamJournalLayout>
+      <AuthProvider initDataRaw={initData}>
+        <StatisticsPage />
+      </AuthProvider>
+    </DreamJournalLayout>
   );
 }

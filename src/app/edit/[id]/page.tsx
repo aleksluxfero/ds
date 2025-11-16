@@ -4,6 +4,7 @@
 import { AuthProvider } from '@/contexts/AuthContext';
 import AddDreamPage from '@/components/dream-journal/pages/AddDreamPage';
 import { useRawInitData } from '@telegram-apps/sdk-react';
+import DreamJournalLayout from '@/components/dream-journal/DreamJournalLayout';
 
 /**
  * This is the Next.js page for the /edit/[id] route.
@@ -14,8 +15,10 @@ export default function EditDreamRoute() {
   const initData = useRawInitData();
 
   return (
-    <AuthProvider initDataRaw={initData}>
-      <AddDreamPage />
-    </AuthProvider>
+    <DreamJournalLayout>
+      <AuthProvider initDataRaw={initData}>
+        <AddDreamPage />
+      </AuthProvider>
+    </DreamJournalLayout>
   );
 }
