@@ -3,7 +3,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { addDream, getDreamById, updateDream, getAllUniqueTags } from '@/services/api';
 import { Dream, DreamType } from '@/types/dream';
 import { ArrowLeftIcon, XIcon, CheckIcon } from '../icons';
-import { Spinner } from '@telegram-apps/telegram-ui';
+import { Spinner, BackButton } from '@telegram-apps/telegram-ui';
 import { extractTagsFromText } from '../utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -60,6 +60,8 @@ const AddDreamPage: React.FC = () => {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [isTagInputFocused, setIsTagInputFocused] = useState(false);
+  const [initialDream, setInitialDream] = useState<Partial<Dream> | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
   
   const debounceTimeout = useRef<number | null>(null);
   const tagExtractionDebounceTimeout = useRef<number | null>(null);
@@ -73,9 +75,24 @@ const AddDreamPage: React.FC = () => {
     const initialize = async () => {
       getAllUniqueTags(initDataRaw).then(setAllTags).catch(console.error);
 
+      let dreamData: Partial<Dream> = {
+        title: '',
+        content: '',
+        tags: [],
+        type: DreamType.Normal,
+        date: new Date().getTime(),
+      };
+
       if (isEditMode && dreamId) {
         const dreamToEdit = await getDreamById(initDataRaw, dreamId);
         if (dreamToEdit) {
+          dreamData = {
+            title: dreamToEdit.title,
+            content: dreamToEdit.content,
+            tags: dreamToEdit.tags || [],
+            type: dreamToEdit.type || DreamType.Normal,
+            date: dreamToEdit.date,
+          };
           setTitle(dreamToEdit.title);
           setContent(dreamToEdit.content);
           setTags(dreamToEdit.tags || []);
@@ -88,6 +105,7 @@ const AddDreamPage: React.FC = () => {
           }
         } else {
           router.push('/'); // Dream not found, redirect to home
+          return;
         }
       } else {
         // Load draft from localStorage only when creating a new dream
@@ -95,6 +113,13 @@ const AddDreamPage: React.FC = () => {
         if (savedDraft) {
           try {
             const draft = JSON.parse(savedDraft);
+            dreamData = {
+              title: draft.title || '',
+              content: draft.content || '',
+              tags: draft.tags || [],
+              type: draft.type || DreamType.Normal,
+              date: draft.date,
+            };
             setTitle(draft.title || '');
             setContent(draft.content || '');
             setTags(draft.tags || []);
@@ -108,10 +133,28 @@ const AddDreamPage: React.FC = () => {
           }
         }
       }
+      setInitialDream(dreamData);
     };
     initialize();
   }, [isEditMode, dreamId, router, initDataRaw]);
 
+  // Check if form is dirty
+  useEffect(() => {
+    if (!initialDream) return;
+
+    const currentDreamState = {
+      title,
+      content,
+      tags,
+      type,
+      date: isDateUnknown ? null : date.getTime(),
+    };
+
+    // Simple JSON string comparison for deep equality
+    const isSame = JSON.stringify(initialDream) === JSON.stringify(currentDreamState);
+    setIsDirty(!isSame);
+  }, [title, content, tags, type, date, isDateUnknown, initialDream]);
+  
   // Save draft to localStorage with debounce (only in add mode)
   useEffect(() => {
     if (isEditMode) return;
@@ -200,6 +243,14 @@ const AddDreamPage: React.FC = () => {
     }
   }, [isSaving, title, content, tags, type, date, isDateUnknown, isEditMode, dreamId, router, initDataRaw]);
 
+  const handleBackClick = useCallback(() => {
+    if (isDirty) {
+      handleSave();
+    } else {
+      router.back();
+    }
+  }, [isDirty, handleSave, router]);
+
   const handleAddTag = (tag: string) => {
     const cleanedTag = tag.trim().toLowerCase();
     if (cleanedTag && !tags.includes(cleanedTag)) {
@@ -268,10 +319,11 @@ const AddDreamPage: React.FC = () => {
 
   return (
     <div className="animate-fade-in">
+      <BackButton onClick={handleBackClick} />
       <header className="sticky top-0 z-20 h-16 bg-black/30 backdrop-blur-lg border-b border-white/10 flex items-center">
         <div className="container mx-auto px-4 max-w-3xl flex justify-between items-center">
             <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="p-2 rounded-full hover:bg-white/10 transition-colors" aria-label="Назад">
+            <button onClick={handleBackClick} className="p-2 rounded-full hover:bg-white/10 transition-colors" aria-label="Назад">
                 <ArrowLeftIcon className="w-6 h-6 text-gray-300" />
             </button>
             <h1 className="text-lg font-bold text-gray-100">{isEditMode ? 'Редактировать' : 'Новый сон'}</h1>
