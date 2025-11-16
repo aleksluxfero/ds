@@ -116,7 +116,11 @@ ${tagsText}` : ''}
   };
 
   if (loading) {
-    return <LoadingSpinner text="Загрузка сна..." />;
+    return (
+      <div className="flex flex-col h-full">
+        <LoadingSpinner text="Загрузка сна..." />
+      </div>
+    );
   }
 
   if (!dream) {
