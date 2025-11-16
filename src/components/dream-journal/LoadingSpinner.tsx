@@ -6,9 +6,8 @@ interface LoadingSpinnerProps {
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ text = "Загрузка...", fullScreen = false }) => {
-  const containerClasses = fullScreen 
-    ? "fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 z-50"
-    : "flex flex-col items-center justify-center h-full flex-grow";
+  const backgroundClass = fullScreen ? "bg-black bg-opacity-50" : "";
+  const containerClasses = `fixed inset-0 flex flex-col items-center justify-center z-50 ${backgroundClass}`;
 
   return (
     <div className={containerClasses}>
