@@ -80,14 +80,9 @@ export const DreamProvider = ({ children }: { children: ReactNode }) => {
         const dreamsFromDB = await getAllDreams(initDataRaw);
         // Сортируем сны сразу после загрузки
         const sortedDreams = dreamsFromDB.sort((a, b) => {
-            const dateA = a.date ? Number(a.date) : 0;
-            const dateB = b.date ? Number(b.date) : 0;
-            if (dateA === 0 && dateB !== 0) return 1;
-            if (dateA !== 0 && dateB === 0) return -1;
-            if (dateA === 0 && dateB === 0) {
-                return Number(b.created_at) - Number(a.created_at);
-            }
-            return dateB - dateA;
+            const sortValueA = a.date ? Number(a.date) : Number(a.created_at);
+            const sortValueB = b.date ? Number(b.date) : Number(b.created_at);
+            return sortValueB - sortValueA;
         });
         dispatch({ type: 'FETCH_SUCCESS', payload: sortedDreams });
       } catch (error) {
