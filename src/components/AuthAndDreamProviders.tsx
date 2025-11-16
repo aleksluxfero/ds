@@ -1,17 +1,19 @@
 'use client';
 
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import { useRawInitData } from '@telegram-apps/sdk-react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DreamProvider } from '@/contexts/DreamContext';
 import DreamJournalLayout from './dream-journal/DreamJournalLayout';
 import LoadingSpinner from './dream-journal/LoadingSpinner';
-import { useEffect, useState } from 'react';
+import { getAllDreams } from '@/services/api';
+import { Dream } from '@/types/dream';
 
 const AuthAndDreamProviders = ({ children }: PropsWithChildren) => {
   const initDataRaw = useRawInitData();
   const [status, setStatus] = useState<'syncing' | 'ready' | 'error'>('syncing');
   const [errorMessage, setErrorMessage] = useState('');
+  const [initialDreams, setInitialDreams] = useState<Dream[]>([]);
 
   useEffect(() => {
     if (!initDataRaw) {
@@ -21,34 +23,45 @@ const AuthAndDreamProviders = ({ children }: PropsWithChildren) => {
     }
 
     const syncUser = async () => {
-      try {
-        const response = await fetch('/api/auth/sync', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ initData: initDataRaw }),
-        });
+      const response = await fetch('/api/auth/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: initDataRaw }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to sync user.');
+      }
+    };
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to sync user.');
-        }
+    const loadDreams = async () => {
+      const dreamsFromDB = await getAllDreams(initDataRaw);
+      const sortedDreams = dreamsFromDB.sort((a, b) => {
+        const sortValueA = a.date ? Number(a.date) : Number(a.created_at);
+        const sortValueB = b.date ? Number(b.date) : Number(b.created_at);
+        return sortValueB - sortValueA;
+      });
+      setInitialDreams(sortedDreams);
+    };
+
+    const initializeApp = async () => {
+      try {
+        await Promise.all([syncUser(), loadDreams()]);
         setStatus('ready');
       } catch (error: any) {
-        console.error('User sync failed:', error);
-        setErrorMessage(error.message || 'An unknown error occurred.');
+        console.error('Initialization failed:', error);
+        setErrorMessage(error.message || 'An unknown error occurred during initialization.');
         setStatus('error');
       }
     };
 
-    syncUser();
+    initializeApp();
   }, [initDataRaw]);
 
   if (status === 'syncing') {
     return (
       <DreamJournalLayout>
-        <LoadingSpinner text="Синхронизация данных..." fullScreen={true} />
+        <LoadingSpinner text="Синхронизация и загрузка..." fullScreen={true} />
       </DreamJournalLayout>
     );
   }
@@ -64,7 +77,7 @@ const AuthAndDreamProviders = ({ children }: PropsWithChildren) => {
 
   return (
     <AuthProvider initDataRaw={initDataRaw}>
-      <DreamProvider>
+      <DreamProvider initialDreams={initialDreams}>
         {children}
       </DreamProvider>
     </AuthProvider>

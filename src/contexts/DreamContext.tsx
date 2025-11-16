@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useReducer, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useReducer, useContext, ReactNode } from 'react';
 import { Dream } from '@/types/dream';
-import { getAllDreams, addDream, updateDream, deleteDream } from '@/services/api';
+import { addDream, updateDream, deleteDream } from '@/services/api';
 import { useAuth } from './AuthContext';
 
 // 1. Определяем состояние и действия
@@ -61,38 +61,15 @@ interface DreamContextType {
 const DreamContext = createContext<DreamContextType | undefined>(undefined);
 
 // 4. Создаем провайдер
-export const DreamProvider = ({ children }: { children: ReactNode }) => {
+export const DreamProvider = ({ children, initialDreams }: { children: ReactNode, initialDreams: Dream[] }) => {
   const { initDataRaw } = useAuth();
   const initialState: DreamState = {
-    dreams: [],
-    loading: true,
+    dreams: initialDreams,
+    loading: false,
     error: null,
   };
 
   const [state, dispatch] = useReducer(dreamReducer, initialState);
-
-  useEffect(() => {
-    if (!initDataRaw) return;
-
-    const loadDreams = async () => {
-      dispatch({ type: 'FETCH_START' });
-      try {
-        const dreamsFromDB = await getAllDreams(initDataRaw);
-        // Сортируем сны сразу после загрузки
-        const sortedDreams = dreamsFromDB.sort((a, b) => {
-            const sortValueA = a.date ? Number(a.date) : Number(a.created_at);
-            const sortValueB = b.date ? Number(b.date) : Number(b.created_at);
-            return sortValueB - sortValueA;
-        });
-        dispatch({ type: 'FETCH_SUCCESS', payload: sortedDreams });
-      } catch (error) {
-        console.error("Failed to load dreams:", error);
-        dispatch({ type: 'FETCH_ERROR', payload: 'Failed to load dreams' });
-      }
-    };
-
-    loadDreams();
-  }, [initDataRaw]);
 
   // Обертки для API-вызовов с оптимистичными обновлениями
   const handleAddDream = async (dream: Omit<Dream, 'id'>) => {
@@ -102,6 +79,7 @@ export const DreamProvider = ({ children }: { children: ReactNode }) => {
     const tempDream: Dream = {
       ...dream,
       id: tempId,
+      created_at: new Date(), // Add created_at for sorting
     };
 
     dispatch({ type: 'ADD_DREAM', payload: tempDream });
