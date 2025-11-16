@@ -48,7 +48,11 @@ const DreamJournalApp = () => {
   }, [initData]);
 
   if (status === 'syncing') {
-    return <LoadingSpinner text="Синхронизация данных..." fullScreen={true} />;
+    return (
+      <DreamJournalLayout>
+        <LoadingSpinner text="Синхронизация данных..." fullScreen={true} />
+      </DreamJournalLayout>
+    );
   }
 
   if (status === 'error') {

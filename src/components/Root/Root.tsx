@@ -15,6 +15,7 @@ import { ErrorPage } from '@/components/ErrorPage';
 import { useDidMount } from '@/hooks/useDidMount';
 import { setLocale } from '@/core/i18n/locale';
 import LoadingSpinner from '../dream-journal/LoadingSpinner'; // Import LoadingSpinner
+import DreamJournalLayout from '../dream-journal/DreamJournalLayout';
 
 function RootInner({ children }: PropsWithChildren) {
   const lp = useLaunchParams();
@@ -59,6 +60,8 @@ export function Root(props: PropsWithChildren) {
       <RootInner {...props} />
     </ErrorBoundary>
   ) : (
-    <LoadingSpinner text="Загрузка..." fullScreen={true} />
+    <DreamJournalLayout>
+      <LoadingSpinner text="Загрузка..." fullScreen={true} />
+    </DreamJournalLayout>
   );
 }

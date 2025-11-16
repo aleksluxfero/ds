@@ -4,7 +4,7 @@ import { Dream, DreamType } from '@/types/dream';
 import { getAllDreams } from '@/services/api';
 import { ArrowLeftIcon, BarChartIcon } from '../icons';
 import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '../LoadingSpinner';
+import SkeletonStatisticsPage from './SkeletonStatisticsPage';
 
 type FilterType = DreamType | 'all';
 
@@ -212,7 +212,7 @@ const StatisticsPage: React.FC = () => {
                 </div>
 
                 {loading ? (
-                    <LoadingSpinner text="Загрузка статистики..." />
+                    <SkeletonStatisticsPage />
                 ) : filteredDreams.length === 0 ? (
                     <div className="text-center py-20 bg-white/5 border border-white/10 rounded-xl">
                         <BarChartIcon className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
