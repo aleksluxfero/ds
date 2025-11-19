@@ -35,13 +35,13 @@ export async function GET(request: Request) {
             // Ensure we compare against the timestamp number if that's how it's stored, 
             // or convert if using actual date columns. 
             // Schema says `date` is bigint (number).
-            conditions = and(conditions, gte(dreams.date, startDate.getTime()))!;
+            conditions = and(conditions, sql`(${dreams.date} >= ${startDate.getTime()} OR ${dreams.date} IS NULL)`)!;
         }
 
         if (endDateStr) {
             const endDate = new Date(endDateStr);
             endDate.setHours(23, 59, 59, 999);
-            conditions = and(conditions, lte(dreams.date, endDate.getTime()))!;
+            conditions = and(conditions, sql`(${dreams.date} <= ${endDate.getTime()} OR ${dreams.date} IS NULL)`)!;
         }
 
         if (type && type !== 'all') {

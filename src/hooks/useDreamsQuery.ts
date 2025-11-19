@@ -46,10 +46,22 @@ export const useDreamsQuery = (initData: string, search?: string, type?: string)
 };
 
 export const useDreamQuery = (initData: string, id: number) => {
+    const queryClient = useQueryClient();
+
     return useQuery({
         queryKey: ['dream', id],
         queryFn: () => getDreamById(initData, id),
         enabled: !!initData && !!id,
+        initialData: () => {
+            const allDreamsCache = queryClient.getQueryData<{ pages: { dreams: Dream[] }[] }>(['dreams']);
+            if (allDreamsCache) {
+                for (const page of allDreamsCache.pages) {
+                    const found = page.dreams.find(d => d.id === id);
+                    if (found) return found;
+                }
+            }
+            return undefined;
+        }
     });
 };
 

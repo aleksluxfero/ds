@@ -53,7 +53,7 @@ const DreamDetailPage: React.FC = () => {
   };
 
   const handleTagClick = (tag: string) => {
-    router.push('/');
+    router.push(`/?search=${encodeURIComponent(tag)}`);
   };
 
   const formattedDate = dream?.date

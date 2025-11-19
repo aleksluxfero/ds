@@ -56,7 +56,7 @@ const AddDreamPage: React.FC = () => {
       setTags(dreamToEdit.tags || []);
       setType(dreamToEdit.type || DreamType.Normal);
       if (dreamToEdit.date) {
-        setDate(new Date(dreamToEdit.date));
+        setDate(new Date(Number(dreamToEdit.date)));
         setIsDateUnknown(false);
       } else {
         setIsDateUnknown(true);

@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DreamType } from '@/types/dream';
 import DreamCard from '@/components/dream-journal/DreamCard';
 import ConfirmationDialog from '@/components/dream-journal/ConfirmationDialog';
@@ -10,7 +10,7 @@ import { Link } from '@/components/Link/Link';
 import SkeletonCard from '@/components/dream-journal/SkeletonCard';
 import { useRawInitData } from '@telegram-apps/sdk-react';
 import { useDreamsQuery, useDeleteDreamMutation } from '@/hooks/useDreamsQuery';
-import { useDebounce } from '@/hooks/useDebounce'; // We might need to create this or use lodash
+import { useDebounce } from '@/hooks/useDebounce';
 
 const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
   <div className="text-center py-10 flex flex-col items-center">
@@ -60,26 +60,21 @@ const activeFilterStyles: Record<string, string> = {
   [DreamType.SleepParalysis]: 'bg-gradient-to-r from-red-700/50 to-gray-800/50 text-white shadow-md',
 };
 
-
-const HomePage: React.FC = () => {
+const DreamList: React.FC = () => {
   const initData = useRawInitData();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
 
   const [showConfirm, setShowConfirm] = useState<number | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [isSearchOpen, setIsSearchOpen] = useState(!!initialSearch);
   const [toastState, setToastState] = useState<ToastState>({ visible: false, message: '', type: 'loading' });
   const [filterType, setFilterType] = useState<FilterType>('all');
 
   // Debounce search query
-  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   const {
     data,
@@ -209,6 +204,7 @@ const HomePage: React.FC = () => {
                 onClick={() => {
                   setIsSearchOpen(false);
                   setSearchQuery('');
+                  router.replace('/'); // Clear URL param
                 }}
                 className="p-2 rounded-full text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
                 aria-label="Закрыть поиск"
@@ -228,8 +224,8 @@ const HomePage: React.FC = () => {
                 key={option.key}
                 onClick={() => setFilterType(option.key)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filterType === option.key
-                    ? activeFilterStyles[option.key]
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  ? activeFilterStyles[option.key]
+                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
                   }`}
               >
                 {option.label}
@@ -296,6 +292,14 @@ const HomePage: React.FC = () => {
         visible={toastState.visible}
       />
     </div>
+  );
+};
+
+const HomePage: React.FC = () => {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <DreamList />
+    </Suspense>
   );
 };
 
