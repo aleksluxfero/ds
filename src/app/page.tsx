@@ -73,6 +73,14 @@ const DreamList: React.FC = () => {
   const [toastState, setToastState] = useState<ToastState>({ visible: false, message: '', type: 'loading' });
   const [filterType, setFilterType] = useState<FilterType>('all');
 
+  useEffect(() => {
+    const search = searchParams.get('search') || '';
+    if (search !== searchQuery) {
+      setSearchQuery(search);
+      if (search) setIsSearchOpen(true);
+    }
+  }, [searchParams]);
+
   // Debounce search query
   const debouncedSearch = useDebounce(searchQuery, 500);
 

@@ -53,9 +53,10 @@ export const useDreamQuery = (initData: string, id: number) => {
         queryFn: () => getDreamById(initData, id),
         enabled: !!initData && !!id,
         initialData: () => {
-            const allDreamsCache = queryClient.getQueryData<{ pages: { dreams: Dream[] }[] }>(['dreams']);
-            if (allDreamsCache) {
-                for (const page of allDreamsCache.pages) {
+            const queries = queryClient.getQueriesData<{ pages: { dreams: Dream[] }[] }>({ queryKey: ['dreams'] });
+            for (const [key, data] of queries) {
+                if (!data) continue;
+                for (const page of data.pages) {
                     const found = page.dreams.find(d => d.id === id);
                     if (found) return found;
                 }
