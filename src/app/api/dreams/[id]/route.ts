@@ -1,10 +1,10 @@
-
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
 import { validateTelegramAuth } from '@/lib/auth';
-import { Dream } from '@/lib/db';
+import { db } from '@/lib/drizzle';
+import { dreams } from '@/lib/schema';
+import { dreamUpdateSchema } from '@/lib/validation';
+import { eq, and } from 'drizzle-orm';
 
-// This is the same helper from the parent route. In a larger app, this would be in a shared lib file.
 async function handleAuth(request: Request) {
     const initData = request.headers.get('X-Telegram-Auth');
     if (!initData) {
@@ -18,17 +18,19 @@ async function handleAuth(request: Request) {
     }
 }
 
-// GET /api/dreams/[id] - Fetches a single dream
-export async function GET(request: Request, { params }: any) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const authResult = await handleAuth(request);
     if (authResult instanceof NextResponse) return authResult;
     const userId = authResult;
-    const dreamId = parseInt(params.id, 10);
+
+    const { id } = await params;
+    const dreamId = parseInt(id, 10);
 
     try {
-        const { rows: [dream] } = await sql<Dream>`
-            SELECT * FROM dreams WHERE id = ${dreamId} AND user_id = ${userId};
-        `;
+        const [dream] = await db.select()
+            .from(dreams)
+            .where(and(eq(dreams.id, dreamId), eq(dreams.userId, userId)));
+
         if (!dream) {
             return NextResponse.json({ message: 'Dream not found.' }, { status: 404 });
         }
@@ -39,28 +41,30 @@ export async function GET(request: Request, { params }: any) {
     }
 }
 
-// PUT /api/dreams/[id] - Updates a dream
-export async function PUT(request: Request, { params }: any) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const authResult = await handleAuth(request);
     if (authResult instanceof NextResponse) return authResult;
     const userId = authResult;
-    const dreamId = parseInt(params.id, 10);
+
+    const { id } = await params;
+    const dreamId = parseInt(id, 10);
 
     try {
-        const { dream: dreamInput } = await request.json();
-        const { title, content, date, tags, type } = dreamInput;
+        const json = await request.json();
+        const validation = dreamUpdateSchema.safeParse(json.dream);
 
-        const { rows: [updatedDream] } = await sql<Dream>`
-            UPDATE dreams
-            SET
-                title = ${title},
-                content = ${content},
-                date = ${date},
-                tags = ${tags},
-                type = ${type}
-            WHERE id = ${dreamId} AND user_id = ${userId}
-            RETURNING *;
-        `;
+        if (!validation.success) {
+            return NextResponse.json({ message: 'Validation failed', errors: validation.error.flatten() }, { status: 400 });
+        }
+
+        const [updatedDream] = await db.update(dreams)
+            .set({
+                ...validation.data,
+                type: validation.data.type as any,
+                updatedAt: new Date(),
+            })
+            .where(and(eq(dreams.id, dreamId), eq(dreams.userId, userId)))
+            .returning();
 
         if (!updatedDream) {
             return NextResponse.json({ message: 'Dream not found or access denied.' }, { status: 404 });
@@ -73,19 +77,20 @@ export async function PUT(request: Request, { params }: any) {
     }
 }
 
-// DELETE /api/dreams/[id] - Deletes a dream
-export async function DELETE(request: Request, { params }: any) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const authResult = await handleAuth(request);
     if (authResult instanceof NextResponse) return authResult;
     const userId = authResult;
-    const dreamId = parseInt(params.id, 10);
+
+    const { id } = await params;
+    const dreamId = parseInt(id, 10);
 
     try {
-        const result = await sql`
-            DELETE FROM dreams WHERE id = ${dreamId} AND user_id = ${userId};
-        `;
+        const [deletedDream] = await db.delete(dreams)
+            .where(and(eq(dreams.id, dreamId), eq(dreams.userId, userId)))
+            .returning();
 
-        if (result.rowCount === 0) {
+        if (!deletedDream) {
             return NextResponse.json({ message: 'Dream not found or access denied.' }, { status: 404 });
         }
 

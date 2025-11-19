@@ -3,7 +3,7 @@
 import { PropsWithChildren } from 'react';
 import { useRawInitData } from '@telegram-apps/sdk-react';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { DreamProvider } from '@/contexts/DreamContext';
+
 import DreamJournalLayout from './dream-journal/DreamJournalLayout';
 import LoadingSpinner from './dream-journal/LoadingSpinner';
 import { useEffect, useState } from 'react';
@@ -64,9 +64,7 @@ const AuthAndDreamProviders = ({ children }: PropsWithChildren) => {
 
   return (
     <AuthProvider initDataRaw={initDataRaw}>
-      <DreamProvider>
-        {children}
-      </DreamProvider>
+      {children}
     </AuthProvider>
   );
 };

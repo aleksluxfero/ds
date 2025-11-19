@@ -1,14 +1,10 @@
-
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
 import { validateTelegramAuth } from '@/lib/auth';
-import { Dream } from '@/lib/db';
+import { db } from '@/lib/drizzle';
+import { dreams } from '@/lib/schema';
+import { dreamSchema } from '@/lib/validation';
+import { eq, desc, and, ilike, or, sql } from 'drizzle-orm';
 
-/**
- * A helper function to handle authentication for all dream routes.
- * @param request - The incoming NextRequest.
- * @returns A NextResponse for errors, or the validated user ID.
- */
 async function handleAuth(request: Request) {
     const initData = request.headers.get('X-Telegram-Auth');
     if (!initData) {
@@ -22,57 +18,75 @@ async function handleAuth(request: Request) {
     }
 }
 
-
-// GET /api/dreams - Fetches all dreams for the authenticated user
 export async function GET(request: Request) {
     const authResult = await handleAuth(request);
-    if (authResult instanceof NextResponse) {
-        return authResult; // Return error response
-    }
+    if (authResult instanceof NextResponse) return authResult;
     const userId = authResult;
 
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const search = searchParams.get('search');
+    const type = searchParams.get('type');
+
     try {
-        const { rows: dreams } = await sql<Dream>`
-            SELECT * FROM dreams
-            WHERE user_id = ${userId}
-            ORDER BY date DESC NULLS LAST, created_at DESC;
-        `;
-        return NextResponse.json({ dreams });
+        let conditions = eq(dreams.userId, userId);
+
+        if (search) {
+            conditions = and(
+                conditions,
+                or(
+                    ilike(dreams.title, `%${search}%`),
+                    ilike(dreams.content, `%${search}%`)
+                )
+            )!;
+        }
+
+        if (type && type !== 'all') {
+            // Cast type to any to avoid strict enum check if type string is loose, 
+            // but ideally we validate it.
+            conditions = and(conditions, eq(dreams.type, type as any))!;
+        }
+
+        const data = await db.select()
+            .from(dreams)
+            .where(conditions)
+            .limit(limit)
+            .offset(offset)
+            .orderBy(desc(dreams.date), desc(dreams.createdAt));
+
+        return NextResponse.json({ dreams: data });
     } catch (error) {
         console.error('API Error fetching dreams:', error);
         return NextResponse.json({ message: 'Failed to fetch dreams.' }, { status: 500 });
     }
 }
 
-// POST /api/dreams - Creates a new dream for the authenticated user
 export async function POST(request: Request) {
     const authResult = await handleAuth(request);
-    if (authResult instanceof NextResponse) {
-        return authResult; // Return error response
-    }
+    if (authResult instanceof NextResponse) return authResult;
     const userId = authResult;
 
     try {
-        const { dream: dreamInput } = await request.json();
-        if (
-            !dreamInput ||
-            (!dreamInput.title?.trim() &&
-             !dreamInput.content?.trim() &&
-             (!dreamInput.tags || dreamInput.tags.length === 0))
-        ) {
-            return NextResponse.json({ message: 'A title, content, or tag is required to save a dream.' }, { status: 400 });
+        const json = await request.json();
+        const validation = dreamSchema.safeParse(json.dream);
+
+        if (!validation.success) {
+            return NextResponse.json({ message: 'Validation failed', errors: validation.error.flatten() }, { status: 400 });
         }
 
-        const { title, content, date, tags, type } = dreamInput;
+        const { title, content, date, tags, type } = validation.data;
 
-        const { rows: [newDream] } = await sql<Dream>`
-            INSERT INTO dreams (user_id, title, content, date, tags, type)
-            VALUES (${userId}, ${title}, ${content}, ${date || null}, ${tags || []}, ${type || 'normal'})
-            RETURNING *;
-        `;
+        const [newDream] = await db.insert(dreams).values({
+            userId,
+            title,
+            content,
+            date,
+            tags,
+            type: type as any,
+        }).returning();
 
         return NextResponse.json({ message: 'Dream created successfully.', dream: newDream });
-
     } catch (error) {
         console.error('API Error creating dream:', error);
         return NextResponse.json({ message: 'Failed to create dream.' }, { status: 500 });

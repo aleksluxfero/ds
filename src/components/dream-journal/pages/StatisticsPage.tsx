@@ -1,19 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dream, DreamType } from '@/types/dream';
+import { DreamType } from '@/types/dream';
 import { ArrowLeftIcon, BarChartIcon } from '../icons';
-import { useDreams } from '@/contexts/DreamContext';
 import SkeletonStatisticsPage from './SkeletonStatisticsPage';
+import { useRawInitData } from '@telegram-apps/sdk-react';
+import { useDreamStatsQuery } from '@/hooks/useDreamsQuery';
 
 type FilterType = DreamType | 'all';
 
 const filterOptions: { key: FilterType; label: string }[] = [
-  { key: 'all', label: 'Все' },
-  { key: DreamType.Normal, label: 'Обычные' },
-  { key: DreamType.Lucid, label: 'Осознанные' },
-  { key: DreamType.Vivid, label: 'Яркие' },
-  { key: DreamType.FalseAwakening, label: 'Ложные пробуждения' },
-  { key: DreamType.SleepParalysis, label: 'Сонный паралич' },
+    { key: 'all', label: 'Все' },
+    { key: DreamType.Normal, label: 'Обычные' },
+    { key: DreamType.Lucid, label: 'Осознанные' },
+    { key: DreamType.Vivid, label: 'Яркие' },
+    { key: DreamType.FalseAwakening, label: 'Ложные пробуждения' },
+    { key: DreamType.SleepParalysis, label: 'Сонный паралич' },
 ];
 
 const activeFilterStyles: Record<string, string> = {
@@ -25,11 +26,9 @@ const activeFilterStyles: Record<string, string> = {
     [DreamType.SleepParalysis]: 'bg-gradient-to-r from-red-700/50 to-gray-800/50 text-white shadow-md',
 };
 
-// Robustly format a Date object into a 'YYYY-MM-DD' string for the input.
-// This prevents crashes from invalid dates and avoids timezone conversion issues.
 const formatDateForInput = (date: Date): string => {
     if (!date || isNaN(date.getTime())) {
-        date = new Date(); // Fallback to today if date is invalid
+        date = new Date();
     }
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -38,100 +37,52 @@ const formatDateForInput = (date: Date): string => {
 };
 
 const StatisticsPage: React.FC = () => {
-    const { state } = useDreams();
-    const { dreams: allDreams, loading } = state;
+    const initData = useRawInitData();
     const router = useRouter();
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const [startDate, setStartDate] = useState<Date>(thirtyDaysAgo);
     const [endDate, setEndDate] = useState<Date>(new Date());
     const [filterType, setFilterType] = useState<FilterType>('all');
+
+    const { data: stats, isLoading } = useDreamStatsQuery(
+        initData || '',
+        startDate,
+        endDate,
+        filterType
+    );
 
     const handleDateChange = (
         type: 'start' | 'end',
         value: string
     ) => {
         if (!value) return;
-    
+
         const [year, month, day] = value.split('-').map(Number);
-        // Use UTC to avoid timezone issues when only date is concerned
         let selectedDate = new Date(Date.UTC(year, month - 1, day));
-    
+
         const today = new Date();
         today.setUTCHours(0, 0, 0, 0);
-    
+
         if (selectedDate > today) {
             selectedDate = new Date();
-            selectedDate.setUTCHours(0,0,0,0);
+            selectedDate.setUTCHours(0, 0, 0, 0);
         }
-    
+
         if (type === 'start') {
             setStartDate(selectedDate);
-            // If the new start date is after the current end date, update the end date
             if (selectedDate > endDate) {
                 setEndDate(selectedDate);
             }
-        } else { // type === 'end'
+        } else {
             setEndDate(selectedDate);
-            // If the new end date is before the current start date, update the start date
             if (selectedDate < startDate) {
                 setStartDate(selectedDate);
             }
         }
     };
-
-    const filteredDreams = useMemo(() => {
-        const startOfDay = new Date(startDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        return allDreams
-            .filter(dream => {
-                if (!dream.date) {
-                    return false;
-                }
-                const dreamDate = new Date(Number(dream.date));
-                return dreamDate >= startOfDay && dreamDate <= endOfDay;
-            })
-            .filter(dream => {
-                if (filterType === 'all') return true;
-                const dreamType = dream.type || DreamType.Normal;
-                return dreamType === filterType;
-            });
-    }, [allDreams, startDate, endDate, filterType]);
-
-    const stats = useMemo(() => {
-        const total = filteredDreams.length;
-        const normalCount = filteredDreams.filter(d => (d.type || DreamType.Normal) === DreamType.Normal).length;
-        const lucidCount = filteredDreams.filter(d => d.type === DreamType.Lucid).length;
-        const vividCount = filteredDreams.filter(d => d.type === DreamType.Vivid).length;
-        const faCount = filteredDreams.filter(d => d.type === DreamType.FalseAwakening).length;
-        const spCount = filteredDreams.filter(d => d.type === DreamType.SleepParalysis).length;
-        const tagCounts = new Map<string, number>();
-
-        filteredDreams.forEach(dream => {
-            dream.tags.forEach(tag => {
-                tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-            });
-        });
-
-        const sortedTags = Array.from(tagCounts.entries())
-            .sort((a, b) => b[1] - a[1])
-            .map(([tag, count]) => ({ tag, count }));
-
-        return {
-            total,
-            normalCount,
-            lucidCount,
-            vividCount,
-            faCount,
-            spCount,
-            tagStats: sortedTags
-        };
-    }, [filteredDreams]);
 
     return (
         <div>
@@ -175,26 +126,25 @@ const StatisticsPage: React.FC = () => {
                             />
                         </div>
                     </div>
-                     <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {filterOptions.map(option => (
-                        <button
-                            key={option.key}
-                            onClick={() => setFilterType(option.key)}
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                            filterType === option.key
-                                ? activeFilterStyles[option.key]
-                                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                            }`}
-                        >
-                            {option.label}
-                        </button>
+                            <button
+                                key={option.key}
+                                onClick={() => setFilterType(option.key)}
+                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filterType === option.key
+                                        ? activeFilterStyles[option.key]
+                                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                    }`}
+                            >
+                                {option.label}
+                            </button>
                         ))}
                     </div>
                 </div>
 
-                {loading ? (
+                {isLoading ? (
                     <SkeletonStatisticsPage />
-                ) : filteredDreams.length === 0 ? (
+                ) : !stats || stats.total === 0 ? (
                     <div className="text-center py-20 bg-white/5 border border-white/10 rounded-xl">
                         <BarChartIcon className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-gray-300">Сны не найдены</h3>
@@ -215,14 +165,14 @@ const StatisticsPage: React.FC = () => {
                             <h2 className="text-xl font-bold text-gray-200 mb-4">Самые частые теги</h2>
                             {stats.tagStats.length > 0 ? (
                                 <div className="space-y-3">
-                                    {stats.tagStats.map(({ tag, count }, index) => (
+                                    {stats.tagStats.map(({ tag, count }: { tag: string, count: number }) => (
                                         <div key={tag} className="bg-white/5 p-3 rounded-lg border border-white/10">
                                             <div className="flex justify-between items-center mb-1">
                                                 <span className="font-medium text-gray-200 break-all min-w-0 pr-2">{tag}</span>
                                                 <span className="text-sm text-gray-400 flex-shrink-0">{count} {count > 1 && count < 5 ? 'раза' : 'раз'}</span>
                                             </div>
                                             <div className="w-full bg-black/20 rounded-full h-1.5">
-                                                <div 
+                                                <div
                                                     className="bg-gradient-to-r from-purple-500 to-indigo-500 h-1.5 rounded-full"
                                                     style={{ width: `${(count / (stats.tagStats[0]?.count || 1)) * 100}%` }}
                                                 ></div>

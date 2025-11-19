@@ -10,24 +10,28 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.10",
     "@telegram-apps/sdk": "^3.11.8",
     "@telegram-apps/sdk-react": "^3.2.4",
     "@telegram-apps/telegram-ui": "^2.1.5",
     "@tma.js/init-data-node": "^2.0.3",
     "@tonconnect/ui-react": "^2.1.0",
     "@vercel/postgres": "^0.10.0",
+    "drizzle-orm": "^0.44.7",
     "eruda": "^3.0.1",
     "framer-motion": "^12.23.24",
     "next": "15.3.1",
     "next-intl": "^4.1.0",
     "normalize.css": "^8.0.1",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "dotenv": "^17.2.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.4",
     "postcss": "^8",

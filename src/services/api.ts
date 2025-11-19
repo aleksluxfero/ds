@@ -35,8 +35,14 @@ async function apiFetch(path: string, options: RequestInit) {
 
 // --- CRUD Functions for Dreams ---
 
-export const getAllDreams = async (initData: string): Promise<Dream[]> => {
-    const data = await apiFetch('dreams', {
+export const getAllDreams = async (initData: string, params?: { limit?: number; offset?: number; search?: string; type?: string }): Promise<Dream[]> => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.type) queryParams.append('type', params.type);
+
+    const data = await apiFetch(`dreams?${queryParams.toString()}`, {
         method: 'GET',
         headers: createAuthHeaders(initData),
     });
