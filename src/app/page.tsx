@@ -8,7 +8,7 @@ import Toast from '@/components/dream-journal/Toast';
 import { PlusIcon, BookOpenTextIcon, SettingsIcon, SearchIcon, XIcon, BarChartIcon } from '@/components/dream-journal/icons';
 import { Link } from '@/components/Link/Link';
 import SkeletonCard from '@/components/dream-journal/SkeletonCard';
-import { useRawInitData } from '@telegram-apps/sdk-react';
+import { useRawInitData, useSignal, initDataState as _initDataState } from '@telegram-apps/sdk-react';
 import { useDreamsQuery, useDeleteDreamMutation } from '@/hooks/useDreamsQuery';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -62,6 +62,9 @@ const activeFilterStyles: Record<string, string> = {
 
 const DreamList: React.FC = () => {
   const initData = useRawInitData();
+  const initDataState = useSignal(_initDataState);
+  const user = initDataState?.user;
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
@@ -179,14 +182,28 @@ const DreamList: React.FC = () => {
                 <div className="relative" ref={settingsMenuRef}>
                   <button
                     onClick={() => setIsSettingsOpen(prev => !prev)}
-                    className="p-2 rounded-full text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
-                    aria-label="Настройки"
+                    className="relative rounded-full overflow-hidden w-9 h-9 border border-white/10 hover:border-purple-500/50 transition-colors"
+                    aria-label="Меню пользователя"
                   >
-                    <SettingsIcon className="w-6 h-6" />
+                    {user?.photo_url ? (
+                      <img src={user.photo_url} alt={user.first_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+                        {user?.first_name?.[0] || 'U'}
+                      </div>
+                    )}
                   </button>
                   {isSettingsOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-[#1a182e] border border-purple-500/20 rounded-lg shadow-2xl z-30 p-2 animate-fade-in-fast">
-                      <Link href="/stats" className="w-full flex items-center gap-3 text_sm px-3 py-2 rounded-md text-gray-300 hover:bg-white/10 transition-colors">
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-[#1a182e] border border-purple-500/20 rounded-lg shadow-2xl z-30 p-2 animate-fade-in-fast">
+                      <div className="px-3 py-2 border-b border-white/5 mb-1">
+                        <p className="text-sm font-semibold text-gray-200 truncate">
+                          {user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Пользователь'}
+                        </p>
+                        {user?.username && (
+                          <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+                        )}
+                      </div>
+                      <Link href="/stats" className="w-full flex items-center gap-3 text-sm px-3 py-2 rounded-md text-gray-300 hover:bg-white/10 transition-colors">
                         <BarChartIcon className="w-4 h-4" />
                         Статистика
                       </Link>

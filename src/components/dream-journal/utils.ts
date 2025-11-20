@@ -40,7 +40,7 @@ const vividStyles = {
   iconColor: 'text-gray-300'
 };
 
-const normalStyles = { 
+const normalStyles = {
   container: 'p-px bg-gradient-to-br from-purple-600/40 to-indigo-600/40',
   card: 'border-transparent bg-[#1a182e] backdrop-blur-none',
   badge: 'bg-white/10 text-gray-300',
@@ -80,6 +80,15 @@ export const getDreamTypeLabel = (type: DreamType = DreamType.Normal) => {
       return 'Яркий';
     default:
       return 'Обычный';
+  }
+};
+
+export const getShortDreamTypeLabel = (type: DreamType = DreamType.Normal) => {
+  switch (type) {
+    case DreamType.FalseAwakening:
+      return 'ЛП';
+    default:
+      return getDreamTypeLabel(type);
   }
 };
 

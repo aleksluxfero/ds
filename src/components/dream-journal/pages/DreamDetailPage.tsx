@@ -154,15 +154,15 @@ ${tagsText}` : ''}
 
       <div className="container mx-auto px-4 pb-8 md:pb-12 pt-8 max-w-3xl">
         <article className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-6 md:p-8">
-          <div className="relative mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-100 break-words pr-24">{dream.title || "Без названия"}</h1>
-            <div className={`absolute top-0 right-0 text-xs font-semibold px-2 py-1 rounded-md flex-shrink-0 ${styles.badge}`}>
-              {getDreamTypeLabel(dream.type)}
-            </div>
+          <div className="mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-100 break-words">{dream.title || "Без названия"}</h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-400 text-sm mb-6">
+          <div className="flex flex-wrap items-center gap-3 text-gray-400 text-sm mb-6">
             <span>{formattedDate}</span>
+            <div className={`text-xs font-semibold px-2 py-1 rounded-md ${styles.badge}`}>
+              {getDreamTypeLabel(dream.type)}
+            </div>
           </div>
 
           {(dream.tags?.length > 0) && (
