@@ -210,12 +210,8 @@ const AddDreamPage: React.FC = () => {
   }, [isSaving, title, content, tags, type, date, isDateUnknown, isEditMode, dreamId, router, createMutation, updateMutation]);
 
   const handleBackClick = useCallback(() => {
-    if (isDirty) {
-      handleSave();
-    } else {
-      router.back();
-    }
-  }, [isDirty, handleSave, router]);
+    router.back();
+  }, [router]);
 
   useEffect(() => {
     backButton.hide();

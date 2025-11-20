@@ -280,7 +280,7 @@ const DreamList: React.FC = () => {
 
       <button
         onClick={() => router.push('/add')}
-        className="fixed bottom-8 right-8 bg-purple-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-purple-600/40 hover:bg-purple-700 transition-all duration-300 transform hover:scale-110 z-20"
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-purple-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-purple-600/40 hover:bg-purple-700 transition-all duration-300 transform hover:scale-110 z-20"
         aria-label="Добавить новый сон"
       >
         <PlusIcon className="w-7 h-7" />
