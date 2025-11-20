@@ -42,6 +42,7 @@ export const useDreamsQuery = (initData: string, search?: string, type?: string)
         getNextPageParam: (lastPage) => lastPage.nextOffset,
         initialPageParam: 0,
         enabled: !!initData,
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 };
 

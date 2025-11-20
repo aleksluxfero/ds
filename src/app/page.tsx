@@ -131,6 +131,29 @@ const DreamList: React.FC = () => {
     }
   }, [toastState]);
 
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   const handleDeleteRequest = useCallback((id: number) => {
     setShowConfirm(id);
   }, []);
@@ -283,14 +306,14 @@ const DreamList: React.FC = () => {
         )}
 
         {hasNextPage && (
-          <div className="flex justify-center mt-8">
-            <button
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-full transition-colors disabled:opacity-50"
-            >
-              {isFetchingNextPage ? 'Загрузка...' : 'Загрузить еще'}
-            </button>
+          <div ref={observerTarget} className="flex justify-center mt-8 py-4">
+            {isFetchingNextPage && (
+              <div className="flex items-center gap-2 text-purple-300/70">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+              </div>
+            )}
           </div>
         )}
       </div>
