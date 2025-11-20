@@ -19,6 +19,7 @@ import { useDidMount } from '@/hooks/useDidMount';
 import { setLocale } from '@/core/i18n/locale';
 import LoadingSpinner from '../dream-journal/LoadingSpinner'; // Import LoadingSpinner
 import DreamJournalLayout from '../dream-journal/DreamJournalLayout';
+import AuthAndDreamProviders from '@/components/AuthAndDreamProviders';
 
 function RootInner({ children }: PropsWithChildren) {
   const lp = useLaunchParams();
@@ -47,17 +48,19 @@ function RootInner({ children }: PropsWithChildren) {
           ['macos', 'ios'].includes(lp.tgWebAppPlatform) ? 'ios' : 'base'
         }
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+        <AuthAndDreamProviders>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </AuthAndDreamProviders>
       </AppRoot>
     </TonConnectUIProvider>
   );
