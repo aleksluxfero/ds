@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         <I18nProvider>
           <QueryProvider>
             <Root>
-              <AuthAndDreamProviders>{children}</AuthAndDreamProviders>
+              {children}
             </Root>
           </QueryProvider>
         </I18nProvider>

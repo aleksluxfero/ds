@@ -1,7 +1,7 @@
 'use client';
 
 import { type PropsWithChildren, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+
 import {
   initData,
   miniApp,
@@ -11,7 +11,7 @@ import {
 import { viewport } from '@telegram-apps/sdk';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import { AppRoot } from '@telegram-apps/telegram-ui';
-import { AnimatePresence, motion } from 'framer-motion';
+
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorPage } from '@/components/ErrorPage';
@@ -23,7 +23,7 @@ import AuthAndDreamProviders from '@/components/AuthAndDreamProviders';
 
 function RootInner({ children }: PropsWithChildren) {
   const lp = useLaunchParams();
-  const pathname = usePathname();
+
 
   const isDark = useSignal(miniApp.isDark);
   const initDataUser = useSignal(initData.user);
@@ -49,17 +49,7 @@ function RootInner({ children }: PropsWithChildren) {
         }
       >
         <AuthAndDreamProviders>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          {children}
         </AuthAndDreamProviders>
       </AppRoot>
     </TonConnectUIProvider>
