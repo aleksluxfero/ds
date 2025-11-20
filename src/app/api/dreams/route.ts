@@ -37,7 +37,8 @@ export async function GET(request: Request) {
                 conditions,
                 or(
                     ilike(dreams.title, `%${search}%`),
-                    ilike(dreams.content, `%${search}%`)
+                    ilike(dreams.content, `%${search}%`),
+                    sql`array_to_string(${dreams.tags}, ',') ILIKE ${`%${search}%`}`
                 )
             )!;
         }
